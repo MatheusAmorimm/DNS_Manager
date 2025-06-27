@@ -1,0 +1,9 @@
+[2025-06-26 23:48:31] ❌ Programa iniciado sem privilégios de administrador.
+[2025-06-26 23:48:52] 🔧 Aplicando DNS 8.8.8.8 na interface: Ethernet
+[2025-06-26 23:48:52] ✅ DNS aplicado com sucesso na interface Ethernet
+[2025-06-26 23:48:52] 🔧 Aplicando DNS 8.8.8.8 na interface: 2
+[2025-06-26 23:48:52] ✅ DNS aplicado com sucesso na interface 2
+[2025-06-26 23:51:22] 🔁 Restaurando DNS automático na interface: Ethernet
+[2025-06-26 23:51:23] ✅ DNS restaurado com sucesso na interface Ethernet
+[2025-06-26 23:51:23] 🔁 Restaurando DNS automático na interface: 2
+[2025-06-26 23:51:23] ✅ DNS restaurado com sucesso na interface 2
