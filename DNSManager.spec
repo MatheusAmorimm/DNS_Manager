@@ -6,7 +6,14 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[('.env', '.')],
-    hiddenimports=[],
+    hiddenimports=[
+        'modules.adm',
+        'modules.dns',
+        'modules.interfaces',
+        'modules.ipv4',
+        'modules.ipv6',
+        'modules.log'
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
