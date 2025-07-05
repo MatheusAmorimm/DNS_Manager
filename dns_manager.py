@@ -151,22 +151,12 @@ def menu():
         elif choice == 3:
             enable_ipv6()
         elif choice == 4:
-            try:
-                user_confirm = str(input("⚠️ Confirmar restauração do DNS automático em todas interfaces? [S/N]")).strip().upper()
-                if user_confirm == "S":
-                    restore_dns()
-                else:
-                    print("❌ Operação cancelada.")
-                    sleep(2)
-            except ValueError:
-                while user_confirm != "S" and user_confirm != "N":
-                    user_confirm = str(input("⚠️ Confirmar restauração do DNS automático em todas interfaces? [S/N]")).strip().upper()
-                    if user_confirm == "S":
-                        restore_dns()
-                    else:
-                        print("❌ Operação cancelada.")
-                        sleep(2)
-
+            user_confirm = str(input("⚠️ Confirmar restauração do DNS automático em todas interfaces? [S/N]")).strip().upper()
+            if user_confirm == "S":
+                restore_dns()
+            else:
+                print("❌ Operação cancelada.")
+                sleep(2)
         elif choice == 5:
             if os.path.exists(log_file):
                 try:
