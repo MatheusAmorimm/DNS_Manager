@@ -16,7 +16,7 @@ def menu():
     
     while True:
         print("\n===== SISTEMA DE GERENCIAMENTO DE DNS =====")
-        print("[1] - Aplicar DNS personalizado (ex: Pi-hole)")
+        print("[1] - Aplicar DNS personalizado")
         print("[2] - Desabilitar o IPv4")
         print("[3] - Ativar o IPv4")
         print("[4] - Desabilitar o IPv6")
