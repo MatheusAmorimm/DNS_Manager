@@ -4,6 +4,7 @@ import os
 import ctypes
 import ipaddress
 from dotenv import load_dotenv
+from time import sleep
 
 load_dotenv()
 
@@ -20,6 +21,7 @@ def is_admin():
         return ctypes.windll.shell32.IsUserAnAdmin()
     except Exception as e:
         log(f"❌ Erro ao verificar privilégios de admin: {e}")
+        sleep(2)
         return False
     
 def ipv4_isvalid(ip):
@@ -29,134 +31,148 @@ def ipv4_isvalid(ip):
     except ipaddress.AddressValueError:
         return False
 
+
 def get_connected_interfaces():
     res = subprocess.run("netsh interface show interface", shell=True, capture_output=True, text=True)
-    connecteds_interfaces = list()
+    lines = res.stdout.splitlines()
 
-    for line in res.stdout.splitlines():
-        if "Conectado" in line:
-            parts = line.split()
-            interface_name = parts[-1]
-            connecteds_interfaces.append(interface_name)
-    
-    return connecteds_interfaces
+    connected_interfaces = []
+
+    for line in lines:
+        if line.strip().startswith("Admin") or line.strip().startswith("---") or not line.strip():
+            continue
+        parts = line.strip().split()
+        if "Conectado" in parts or "Connected" in parts:
+            try:
+                # Interface name começa na posição 44 da linha (padrão das colunas netsh)
+                interface_name = line[44:].strip()
+                log(f"🔎 Interface conectada detectada: '{interface_name}'")
+                connected_interfaces.append(interface_name)
+            except Exception as e:
+                log(f"❌ Erro ao processar linha: '{line}' -> {e}")
+
+    return connected_interfaces
 
 def apply_dns(ip_dns):
     interfaces = get_connected_interfaces()
     if not interfaces:
         log("❌ Nenhuma interface conectada encontrada.")
+        sleep(2)
         return
 
     for interface in interfaces:
         try:
             log(f"🔧 Aplicando DNS {ip_dns} na interface: {interface}")
+            cmd = f'netsh interface ip set dns name="{interface}" static {ip_dns}'
+            log(f"Executando comando: {cmd}")
+            subprocess.run(cmd, shell=True, check=True)
             subprocess.run(f'netsh interface ip set dns name="{interface}" static {ip_dns}', shell=True, check=True)
             log(f"✅ DNS aplicado com sucesso na interface {interface}")
+            sleep(2)
         except subprocess.CalledProcessError as e:
             log(f"❌ Falha ao aplicar DNS na interface {interface}. Erro: {e}")
+            sleep(2)
         
 def restore_dns():
     interfaces = get_connected_interfaces()
     if not interfaces:
         log("❌ Nenhuma interface conectada encontrada.")
+        sleep(2)
         return
     for interface in interfaces:
         try:
             log(f"🔁 Restaurando DNS automático na interface: {interface}")
             subprocess.run(f'netsh interface ip set dns name="{interface}" source=dhcp', shell=True, check=True)
+            sleep(2)
             log(f"✅ DNS restaurado com sucesso na interface {interface}")
+            sleep(2)
         except subprocess.CalledProcessError as e:
             log(f"❌ Falha ao restaurar DNS na interface {interface}. Erro: {e}")
+            sleep(2)
 
 def disable_ipv6():
-    log("🔧 Tentando desativar componentes de túnel do IPv6...")
-    commands = {
-        "Teredo": "netsh interface teredo set state disable",
-        "6to4": "netsh interface 6to4 set state disable",
-        "ISATAP": "netsh interface isatap set state disable"
-    }
-    all_successful = True
-    for component, command in commands.items():
-        try:
-            subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
-            log(f"✅ Componente {component} do IPv6 desativado com sucesso.")
-        except subprocess.CalledProcessError as e:
-            error_message = e.stdout.strip() if e.stdout.strip() else e.stderr.strip()
-            if "O sistema não pode encontrar o arquivo especificado" in error_message:
-                 log(f"ℹ️  Componente {component} do IPv6 não encontrado (provavelmente já inativo).")
-            else:
-                log(f"❌ Falha ao desativar {component}. Erro: {error_message}")
-                all_successful = False
+    log("🔧 Desativando IPv6 em todas as interfaces via PowerShell...")
+    try:
+        subprocess.run('powershell "Disable-NetAdapterBinding -Name * -ComponentID ms_tcpip6 -Confirm:$false"', shell=True, check=True)
+        log("✅ IPv6 desativado com sucesso em todas as interfaces.")
+        sleep(2)
+    except subprocess.CalledProcessError as e:
+        log(f"❌ Falha ao desativar IPv6. Erro: {e}")
+        sleep(2)
 
-    if all_successful:
-        log("✅ Operação de desativação de componentes do IPv6 concluída.")
 
 def enable_ipv6():
-    log("🔧 Tentando reativar componentes de túnel do IPv6...")
-    commands = {
-        "Teredo": "netsh interface teredo set state default",
-        "6to4": "netsh interface 6to4 set state default",
-        "ISATAP": "netsh interface isatap set state default"
-    }
-    all_successful = True
-    for component, command in commands.items():
-        try:
-            subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
-            log(f"✅ Componente {component} do IPv6 restaurado para o padrão.")
-        except subprocess.CalledProcessError as e:
-            error_message = e.stdout.strip() if e.stdout.strip() else e.stderr.strip()
-            log(f"❌ Falha ao reativar {component}. Erro: {error_message}")
-            all_successful = False
-            
-    if all_successful:
-        log("✅ Operação de reativação de componentes do IPv6 concluída.")
+    log("🔧 Ativando IPv6 em todas as interfaces via PowerShell...")
+    try:
+        subprocess.run('powershell "Enable-NetAdapterBinding -Name * -ComponentID ms_tcpip6 -Confirm:$false"', shell=True, check=True)
+        log("✅ IPv6 ativado com sucesso em todas as interfaces.")
+        sleep(2)
+    except subprocess.CalledProcessError as e:
+        log(f"❌ Falha ao ativar IPv6. Erro: {e}")
+        sleep(2)
+
 
 def menu():
     if not is_admin():
         print("⚠️ Este programa deve ser executado como administrador!")
         log("❌ Programa iniciado sem privilégios de administrador.")
+        sleep(2)
         return
     
     while True:
         print("\n===== SISTEMA DE GERENCIAMENTO DE DNS =====")
         print("[1] - Aplicar DNS personalizado (ex: Pi-hole)")
-        print("[2] - Restaurar DNS automático")
-        print("[3] - Visualizar log")
-        print("[4] - Sair")
+        print("[2] - Desabilitar o IPv6")
+        print("[3] - Ativar o IPv6")
+        print("[4] - Restaurar o DNS")
+        print("[5] - Visualizar log")
+        print("[6] - Sair")
         choice = int(input("Escolha uma opção: "))
 
-        while choice != 1 and choice != 2 and choice != 3 and choice != 4:
+        while choice != 1 and choice != 2 and choice != 3 and choice != 4 and choice != 5 and choice != 6:
             print("Opção Inválida! Tente novamente: ")
+            sleep(2)
             choice = int(input("Escolha uma opção: "))
         
         if choice == 1:
             ip_dns = input("Digite o IP do servidor DNS: ")
             if not ipv4_isvalid(ip_dns):
                 print("❌ IP inválido. Tente novamente.")
+                sleep(2)
                 continue
-            user_confirm = str(input("Confirmar aplicação do DNS {ip_dns} em todas as interfaces conectadas? [S/N]")).strip().upper()
+            user_confirm = str(input(f"Confirmar aplicação do DNS {ip_dns} em todas as interfaces conectadas? [S/N]: ")).strip().upper()
             if user_confirm == "S":
                apply_dns(ip_dns)
             else:
                 print("❌ Operação cancelada.")
+                sleep(2)
         elif choice == 2:
+            disable_ipv6()
+        elif choice == 3:
+            enable_ipv6()
+        elif choice == 4:
             user_confirm = str(input("⚠️ Confirmar restauração do DNS automático em todas interfaces? [S/N]")).strip().upper()
             if user_confirm == "S":
                 restore_dns()
             else:
                 print("❌ Operação cancelada.")
-        elif choice == 3:
+                sleep(2)
+        elif choice == 5:
             if os.path.exists(log_file):
                 try:
                     with open(log_file, "r", encoding="utf-8") as f:
                         print("\n=== LOGS DE EXECUÇÃO ===")
                         print(f.read())
+                        sleep(2)
                 except Exception as e:
                     log(f"Não foi possível ler o arquivo de log: {e}")
+                    sleep(2)
             else:
                 print("Nenhum log encontrado.")
-        elif choice == 4:
+                sleep(2)
+        elif choice == 6:
             print("Saindo...")
+            sleep(2)
             break
 
 if __name__ == "__main__":
