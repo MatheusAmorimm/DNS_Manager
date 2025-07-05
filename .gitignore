@@ -1,4 +1,5 @@
 .env
-build/DNSManager
+build/
 dist/
 .spec
+.pyc
