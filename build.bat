@@ -1,7 +1,7 @@
 @echo off
 title Construtor do DNSManager
 
-REM --- Limpeza dos builds anteriores ---
+
 echo Limpando builds anteriores...
 if exist "build" (
     rmdir /s /q "build"
@@ -13,13 +13,13 @@ if exist "dist" (
 )
 echo.
 
-REM --- Geracao do executavel usando o arquivo .spec ---
-echo Gerando o novo executavel...
-REM Usamos o arquivo .spec porque ele ja contem a lista de modulos (hiddenimports).
-REM A opcao --onefile pode ser passada aqui para sobrescrever a configuracao do spec, se necessario.
-pyinstaller --onefile DNSManager.spec
 
-REM --- Verificacao de Erro ---
+echo Gerando o novo executavel...
+
+
+pyinstaller DNSManager.spec
+
+
 if %errorlevel% neq 0 (
     echo.
     echo Ocorreu um erro durante a compilacao com o PyInstaller.
@@ -27,7 +27,7 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
-REM --- Mensagem de Conclusao ---
+
 echo.
 echo =======================================================
 echo.
