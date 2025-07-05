@@ -1,4 +1,4 @@
-('C:\\Users\\matheus\\Desktop\\dns-manager\\build\\DNSManager\\PYZ-00.pyz',
+('C:\\Users\\matheus\\Desktop\\codes\\dns-manager\\build\\DNSManager\\PYZ-00.pyz',
  [('IPython',
    'C:\\Users\\matheus\\AppData\\Roaming\\Python\\Python313\\site-packages\\IPython\\__init__.py',
    'PYMODULE'),
